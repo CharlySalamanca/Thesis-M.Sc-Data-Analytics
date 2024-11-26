@@ -6,16 +6,17 @@ output: html_document
 ## Library ##
 
 ```{r}
-install.packages("gdata")
-install.packages("mice")
-install.packages("mltools")
-install.packages("VIM")
+#install.packages("gdata")
+#install.packages("mice")
+#install.packages("mltools")
+#install.packages("VIM")
+#install.packages("naniar")
 ```
-
 
 ```{r}
 library(tidyverse)
 library(VIM)
+library(naniar)
 ```
 
 ```{r}
@@ -849,12 +850,10 @@ produce_MAR_MNAR <- function(data, mechanism, perc.missing, self.mask, idx.incom
 
 ```
 
-```{r}
-df <- read.csv("C:/users/carlo/OneDrive/Dokumente/Master/Thesis/Daten/CAMPUS-File_VSE_2018_Arbeitnehmer.csv", sep = ";")
-```
+## Data ##
 
 ```{r}
-df
+df <- read.csv("CAMPUS-File_VSE_2018_Arbeitnehmer.csv", sep = ";") 
 ```
 
 ```{r}
@@ -882,19 +881,14 @@ name_df <- data.frame("Old Name" = old_column_names, "New Name" = v)
 remove(old_column_names, v)
 ```
 
-```{r}
-df_1
-```
-
-## MCAR ##
+## Simulation NAs ##
+#### MCAR ####
 
 ```{r}
 df_MCAR <- produce_NA(df_1, mechanism="MCAR", perc.missing = 0.1)
 
 R_MCAR <- ifelse(!is.na(df_MCAR), 1, 0)
-```
 
-```{r}
 df_MCAR
 ```
 
@@ -904,10 +898,10 @@ R.mcar <- df_MCAR$idx_newNA
 ```
 
 ```{r}
-matrixplot(df.mcar, cex.axis = 0.5, interactive = F)
+vis_miss(df.mcar, sort_miss = F, cluster = F) 
 ```
 
-## MAR ##
+#### MAR ####
 
 ```{r}
 df_MAR <- produce_NA(df_1, mechanism="MAR", perc.missing = 0.1, by.patterns = F)
@@ -927,8 +921,8 @@ R.mar <- df_MAR$idx_newNA
 ```{r}
 matrixplot(df.mar, cex.axis = 0.5, interactive = F)
 ```
-
-## MNAR (depending on missing values in the covariates) ##
+#### MNAR ####
+##### MNAR (depending on missing values in the covariates) #####
 
 ```{r}
 df_MNAR <- produce_NA(df_1, mechanism="MNAR", perc.missing = 0.1, by.patterns = F)
@@ -949,7 +943,7 @@ R.mnar <- df_MNAR$idx_newNA
 matrixplot(df.mnar, cex.axis = 0.5, interactive = F)
 ```
 
-## MNAR (depending on the observed values of the variable itself) ##
+##### MNAR (depending on the observed values of the variable itself) #####
 
 ```{r}
 df_MNAR_y <- produce_NA(df_1, mechanism="MNAR", perc.missing = 0.1, self.mask="sym", idx.incomplete = c(1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0))
