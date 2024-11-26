@@ -11,6 +11,7 @@ output: html_document
 #install.packages("mltools")
 #install.packages("VIM")
 #install.packages("naniar")
+#install.packages("validate")
 ```
 
 ```{r}
@@ -963,4 +964,95 @@ R.mnar_y <- df_MNAR_y$idx_newNA
 ```{r}
 matrixplot(df.mnar_y, cex.axis = 0.5, interactive = F)
 ```
+
+
+## Simulation faulty ##
+#### FCAR ####
+```{r}
+# Regeln definieren
+
+library(validate)
+
+Jahr <- 2024
+
+rules <- validator(
+  jahre_im_unternehmen <= alter - 14
+)
+```
+
+
+```{r}
+set.seed(123)
+
+valid_jahre <- df_1$jahre_im_unternehmen[!is.na(df_1$jahre_im_unternehmen)]
+faulty_data <- sample(df_1$jahre_im_unternehmen[!is.na(df_1$jahre_im_unternehmen)], 200, replace = TRUE)
+extreme_values <- sample((max(valid_jahre, na.rm = TRUE) + 1):(max(valid_jahre, na.rm = TRUE) + 20), 50, replace = TRUE)
+
+faulty_data_combined <- c(faulty_data, extreme_values)
+df_faulty <- data.frame(jahre_im_unternehmen = faulty_data_combined)
+
+ggplot() +
+  geom_density(aes(x = df_1$jahre_im_unternehmen, fill = "df"), alpha = 0.5, na.rm = TRUE) +
+  geom_density(aes(x = df_faulty$jahre_im_unternehmen, fill = "df_faulty"), alpha = 0.5) +
+  labs(
+    title = "Valid and faulty data for jahre_im_unternehmen",
+    x = "jahre_im_unternehmen",
+    y = "Density"
+  ) +
+  scale_fill_manual(values = c("green", "red"), labels = c("Valid Data", "Faulty Data")) +
+  theme_minimal()
+
+```
+
+
+
+```{r}
+# Replace NAs with invalid values
+df.fcar <- df.mcar
+
+na_rows <- which(is.na(df.mcar$jahre_im_unternehmen))
+
+for (i in na_rows) {
+  # If alter[i] is NA, skip to the next iteration
+  if (is.na(df.fcar$alter[i])) {
+    next
+  }
+  
+  repeat {
+    # Sample a value from df_faulty
+    sampled_value <- sample(df_faulty$jahre_im_unternehmen, 1)
+
+    # Check if the sampled value violates the rule
+    if (sampled_value > df.fcar$alter[i] - 14) {
+      df.fcar$jahre_im_unternehmen[i] <- sampled_value
+      break
+    }
+  }
+}
+```
+
+```{r}
+validation_fcar <- confront(df.fcar, rules)
+
+valid_fcar <- values(validation_fcar)[, 1]
+
+faulty_rows <- which(!valid_fcar)
+
+all_faulty_rows <- union(na_rows, faulty_rows)
+df_faulty_values <- df.fcar[all_faulty_rows, ]
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
