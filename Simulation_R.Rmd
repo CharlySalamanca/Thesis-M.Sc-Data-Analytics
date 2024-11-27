@@ -21,6 +21,13 @@ library(naniar)
 ```
 
 ```{r}
+library(reticulate)
+use_python("C:\\Users\\carlo\\AppData\\Local\\Programs\\Python\\Python312\\python.exe", required = TRUE)
+py_config()
+```
+
+
+```{r}
 suppressPackageStartupMessages(require(gdata))
 suppressPackageStartupMessages(require(mice))
 suppressPackageStartupMessages(require(mltools))
@@ -881,6 +888,7 @@ colnames(df_1)<-v
 name_df <- data.frame("Old Name" = old_column_names, "New Name" = v)
 remove(old_column_names, v)
 ```
+
 
 ## Simulation NAs ##
 #### MCAR ####
