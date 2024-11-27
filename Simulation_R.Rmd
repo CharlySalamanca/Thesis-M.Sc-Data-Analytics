@@ -864,6 +864,7 @@ produce_MAR_MNAR <- function(data, mechanism, perc.missing, self.mask, idx.incom
 df <- read.csv("CAMPUS-File_VSE_2018_Arbeitnehmer.csv", sep = ";") 
 ```
 
+
 ```{r}
 # Test mit 1%
 
@@ -890,6 +891,7 @@ remove(old_column_names, v)
 ```
 
 
+
 ## Simulation NAs ##
 #### MCAR ####
 
@@ -898,12 +900,10 @@ df_MCAR <- produce_NA(df_1, mechanism="MCAR", perc.missing = 0.1)
 
 R_MCAR <- ifelse(!is.na(df_MCAR), 1, 0)
 
-df_MCAR
-```
-
-```{r}
 df.mcar <- df_MCAR$data.incomp
 R.mcar <- df_MCAR$idx_newNA
+
+df_MCAR
 ```
 
 ```{r}
@@ -981,13 +981,56 @@ matrixplot(df.mnar_y, cex.axis = 0.5, interactive = F)
 
 library(validate)
 
-Jahr <- 2024
-
 rules <- validator(
   jahre_im_unternehmen <= alter - 14
 )
+
+rules
+```
+# Option 1: Nicht-Verteilungstreue Simulation
+
+```{r}
+extreme_values <- c(seq(-100, -1, by = 1), seq(54, 100, by = 1))
+non_numeric_values <- c(rep("ungültig", 50), rep("error", 50), rep("unbekannt", 50))
+faulty_values <- c(extreme_values, non_numeric_values)
+df_faulty <- data.frame(jahre_im_unternehmen = faulty_values)
+
+df_faulty$jahre_im_unternehmen
+
 ```
 
+```{r}
+df.fcar <- df.mcar
+
+na_rows <- which(is.na(df.fcar$jahre_im_unternehmen))
+
+for (i in na_rows) {
+  df.fcar$jahre_im_unternehmen[i] <- sample(df_faulty$jahre_im_unternehmen, 1)
+}
+
+```
+
+```{r}
+df_FCAR <- list(
+  idx_newNA = df_MCAR$idx_newNA,
+  data.init = df_MCAR$data.init,
+  data.incomp = df_MCAR$data.incomp,
+  data.faulty = df.fcar  
+)
+
+df_FCAR
+```
+
+
+```{r}
+validation_results <- NULL
+validation_results <- confront(df.fcar, rules)
+validation_summary <- summary(validation_results)
+validation_summary
+```
+
+
+# Option 2: Verteilungstreue Simulation
 
 ```{r}
 set.seed(123)
@@ -1015,19 +1058,18 @@ ggplot() +
 
 
 ```{r}
-# Replace NAs with invalid values
 df.fcar <- df.mcar
 
 na_rows <- which(is.na(df.mcar$jahre_im_unternehmen))
 
 for (i in na_rows) {
-  # If alter[i] is NA, skip to the next iteration
+  # If alter is NA, skip 
   if (is.na(df.fcar$alter[i])) {
     next
   }
   
   repeat {
-    # Sample a value from df_faulty
+    # Sample from df_faulty
     sampled_value <- sample(df_faulty$jahre_im_unternehmen, 1)
 
     # Check if the sampled value violates the rule
@@ -1040,15 +1082,35 @@ for (i in na_rows) {
 ```
 
 ```{r}
-validation_fcar <- confront(df.fcar, rules)
 
-valid_fcar <- values(validation_fcar)[, 1]
+df_FCAR <- list(
+  idx_newNA = df_MCAR$idx_newNA,
+  data.init = df_MCAR$data.init,
+  data.incomp = df_MCAR$data.incomp,
+  data.faulty = df.fcar  
+)
 
-faulty_rows <- which(!valid_fcar)
+df_FCAR
 
-all_faulty_rows <- union(na_rows, faulty_rows)
-df_faulty_values <- df.fcar[all_faulty_rows, ]
 ```
+
+```{r}
+na_counts <- colSums(is.na(df.mcar))
+na_counts
+```
+
+```{r}
+
+validation_results <- confront(df.fcar, rules)
+validation_summary <- summary(validation_results)
+validation_summary
+
+```
+
+
+
+
+
 
 
 
