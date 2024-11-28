@@ -14,7 +14,7 @@ output: html_document
 #install.packages("validate")
 ```
 
-```{r}
+```{r include=FALSE}
 library(tidyverse)
 library(VIM)
 library(naniar)
@@ -866,6 +866,11 @@ df <- read.csv("CAMPUS-File_VSE_2018_Arbeitnehmer.csv", sep = ";")
 
 
 ```{r}
+str(df)
+```
+
+
+```{r}
 # Test mit 1%
 
 df_1 <- df %>% sample_frac(.01)
@@ -991,9 +996,11 @@ rules
 
 ```{r}
 extreme_values <- c(seq(-100, -1, by = 1), seq(54, 100, by = 1))
-non_numeric_values <- c(rep("ungültig", 50), rep("error", 50), rep("unbekannt", 50))
-faulty_values <- c(extreme_values, non_numeric_values)
+non_numeric_placeholders <- rep(NaN, 100)
+faulty_values <- c(extreme_values, non_numeric_placeholders)
 df_faulty <- data.frame(jahre_im_unternehmen = faulty_values)
+
+
 
 df_faulty$jahre_im_unternehmen
 
@@ -1002,7 +1009,7 @@ df_faulty$jahre_im_unternehmen
 ```{r}
 df.fcar <- df.mcar
 
-na_rows <- which(is.na(df.fcar$jahre_im_unternehmen))
+na_rows <- which(is.na(df.mcar$jahre_im_unternehmen))
 
 for (i in na_rows) {
   df.fcar$jahre_im_unternehmen[i] <- sample(df_faulty$jahre_im_unternehmen, 1)
@@ -1027,6 +1034,12 @@ validation_results <- NULL
 validation_results <- confront(df.fcar, rules)
 validation_summary <- summary(validation_results)
 validation_summary
+```
+```{r}
+### Rule funktioniert nicht, waurm auch immer.
+
+#Alternative:
+  sum(with(df.fcar, jahre_im_unternehmen > (alter - 14)), na.rm = TRUE)
 ```
 
 
@@ -1107,6 +1120,12 @@ validation_summary
 
 ```
 
+```{r}
+### Rule funktioniert
+
+#Alternative:
+  sum(with(df.fcar, jahre_im_unternehmen > (alter - 14)), na.rm = TRUE)
+```
 
 
 
